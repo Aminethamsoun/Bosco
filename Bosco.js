@@ -2741,43 +2741,93 @@ case 'attp':
               buffer = await getBuffer(`https://api.xteam.xyz/attp?file&text=${encodeURI(q)}`)
               bosco.sendMessage(from, buffer, sticker, { quoted: mek })
               break
-       case 'sticker':
-       case 'stiker':
-       case 's':
-       case 'stickergif':
-       case 'stikergif':
-       case 'sgif':
-              if (isAuto) return
-              if ((isMedia && !mek.message.videoMessage || isQuotedImage) && args.length == 0) {
-              encmediat = isQuotedImage ? JSON.parse(JSON.stringify(mek).replace('quotedM','m')).message.extendedTextMessage.contextInfo : mek
-              mediat = await bosco.downloadAndSaveMediaMessage(encmediat)
-              ron = getRandom('.webp')
-              exec(`ffmpeg -i ${mediat} -vf "scale=512:512:force_original_aspect_ratio=increase,fps=15, crop=512:512" ${ron}`, (err) => {
-              fs.unlinkSync(mediat)
-              if (err) return reply(`${err}`)
-              exec(`webpmux -set exif ${addMetadata('Denis')} ${ron} -o ${ron}`, async (error) => {
-              if (error) return reply(`${error}`)
-              bosco.sendMessage(from, fs.readFileSync(ron), sticker, {quoted:mek})
-              fs.unlinkSync(ron)
-})
-})
-              } else if ((isMedia && mek.message.videoMessage.seconds < 11 || isQuotedVideo && mek.message.extendedTextMessage.contextInfo.quotedMessage.videoMessage.seconds < 11) && args.length == 0) {
-              encmedia = isQuotedVideo ? JSON.parse(JSON.stringify(mek).replace('quotedM','m')).message.extendedTextMessage.contextInfo : mek
-              mediat = await bosco.downloadAndSaveMediaMessage(encmedia)
-              ron = getRandom('.webp')
-              exec(`ffmpeg -i ${mediat} -vf "scale=512:512:force_original_aspect_ratio=increase,fps=15, crop=512:512" ${ron}`, (err) => {
-              fs.unlinkSync(mediat)
-              if (err) return reply(`${err}`)
-              exec(`webpmux -set exif ${addMetadata('Denis')} ${ron} -o ${ron}`, async (error) => {
-              if (error) return reply(`${error}`)
-              bosco.sendMessage(from, fs.readFileSync(ron), sticker, {quoted:mek})
-              fs.unlinkSync(ron)
-})
-})
-              } else {
-              reply(`*_Send an image with the caption ${prefix}sticker_*\n*_Sticker Video Duration 1-9 Seconds_*`)
-}
-              break
+       case "sticker":
+      case "stiker":
+      case "sg":
+      case "s":
+        if (
+          ((isMedia && !mek.message.videoMessage) || isQuotedImage) &&
+          args.length == 0
+        ) {
+          const encmedia = isQuotedImage
+            ? JSON.parse(JSON.stringify(mek).replace("quotedM", "m")).message
+                .extendedTextMessage.contextInfo
+            : mek;
+          const media = await bosco.downloadAndSaveMediaMessage(encmedia);
+          ran = "666.webp";
+          await ffmpeg(`./${media}`)
+            .input(media)
+            .on("start", function (cmd) {
+              console.log(`Started : ${cmd}`);
+            })
+            .on("error", function (err) {
+              console.log(`Error : ${err}`);
+              fs.unlinkSync(media);
+              reply("error");
+            })
+            .on("end", function () {
+              console.log("Finish");
+              bosco.sendMessage(from, fs.readFileSync(ran), sticker, {
+                quoted: mek,
+              });
+              fs.unlinkSync(media);
+              fs.unlinkSync(ran);
+            })
+            .addOutputOptions([
+              `-vcodec`,
+              `libwebp`,
+              `-vf`,
+              `scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`,
+            ])
+            .toFormat("webp")
+            .save(ran);
+        } else if (
+          ((isMedia && mek.message.videoMessage.seconds < 11) ||
+            (isQuotedVideo &&
+              mek.message.extendedTextMessage.contextInfo.quotedMessage
+                .videoMessage.seconds < 11)) &&
+          args.length == 0
+        ) {
+          const encmedia = isQuotedVideo
+            ? JSON.parse(JSON.stringify(mek).replace("quotedM", "m")).message
+                .extendedTextMessage.contextInfo
+            : mek;
+          const media = await bosco.downloadAndSaveMediaMessage(encmedia);
+          ran = "999.webp";
+          reply(mess.wait);
+          await ffmpeg(`./${media}`)
+            .inputFormat(media.split(".")[1])
+            .on("start", function (cmd) {
+              console.log(`Started : ${cmd}`);
+            })
+            .on("error", function (err) {
+              console.log(`Error : ${err}`);
+              fs.unlinkSync(media);
+              tipe = media.endsWith(".mp4") ? "video" : "gif";
+              reply(`Gagal, pada saat mengkonversi ${tipe} ke stiker`);
+            })
+            .on("end", function () {
+              console.log("Finish");
+              bosco.sendMessage(from, fs.readFileSync(ran), sticker, {
+                quoted: mek,
+              });
+              fs.unlinkSync(media);
+              fs.unlinkSync(ran);
+            })
+            .addOutputOptions([
+              `-vcodec`,
+              `libwebp`,
+              `-vf`,
+              `scale='min(320,iw)':min'(320,ih)':force_original_aspect_ratio=decrease,fps=15, pad=320:320:-1:-1:color=white@0.0, split [a][b]; [a] palettegen=reserve_transparent=on:transparency_color=ffffff [p]; [b][p] paletteuse`,
+            ])
+            .toFormat("webp")
+            .save(ran);
+        } else {
+          reply(
+            `Send a picture with a caption ${prefix}sticker\nVideo Sticker Duration 1-9 Seconds`
+          );
+        }
+        break
 case 'emoji':
 			if (!q) return fakegroup('*emoji where..?*')
 			qes = args.join(' ')
